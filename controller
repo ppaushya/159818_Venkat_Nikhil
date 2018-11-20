@@ -1,0 +1,153 @@
+package org.cap.controller;
+
+import java.util.List;
+
+import org.cap.model.Customer;
+import org.cap.service.ICustomerService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@CrossOrigin(origins="*")
+@RequestMapping("/api")
+public class CustomerController {
+	
+	@Autowired
+	private ICustomerService customerService;
+	
+	@GetMapping(value="/customers")
+	public ResponseEntity<List<Customer>> getAllCustomers(){
+		List<Customer> customers=customerService.getAllCustomers();
+	   if(customers.isEmpty())
+		   return new ResponseEntity("Sorry! Customer List is not Available",HttpStatus.NOT_FOUND);
+	   
+	   return new ResponseEntity<List<Customer>>(customers, HttpStatus.OK);
+	
+	}
+	
+	@GetMapping(value="/updatecustomers")
+	public ResponseEntity<List<Customer>>updateCustomer( 
+			@RequestBody Customer customer){
+		List<Customer> customers= customerService.updateCustomer(customer);
+		
+		if(customers.isEmpty())
+			return new ResponseEntity("Not Inserted!", HttpStatus.NOT_FOUND);
+		
+		return new ResponseEntity<List<Customer>>(customers, HttpStatus.OK);
+	}
+	
+	
+	@PostMapping(value="/createcustomers")
+	public ResponseEntity<List<Customer>> createCustomer(
+			@RequestBody Customer customer){
+		List<Customer> customers=customerService.createCustomer(customer);
+		
+		if(customers==null)
+			return new ResponseEntity("Insertion Failed",HttpStatus.NOT_FOUND);
+		
+		return new ResponseEntity<List<Customer>>(customers,HttpStatus.OK);
+		
+		
+	}
+	
+	
+	@GetMapping(value="/deletecustomers/{customerId}")
+	public ResponseEntity<List<Customer>>deletCustomer(
+			@PathVariable("customerId")Integer customerId){
+		List<Customer> customers= customerService.deleteCustomer(customerId);
+		
+		if(customers==null)
+			return new ResponseEntity("Sorry! Customer Id not available!", HttpStatus.NOT_FOUND);
+		
+		return new ResponseEntity<List<Customer>>(customers, HttpStatus.OK);
+	}
+
+	@GetMapping(value="/customers/{customerId}")
+	public ResponseEntity<Customer> findCustomers(
+			@PathVariable("customerId")Integer customerId){
+		Customer customer= customerService.findCustomer(customerId);
+		
+		if(customer==null)
+			return new ResponseEntity("Sorry! Customer ID does not exists!", HttpStatus.NOT_FOUND);
+		
+		return new ResponseEntity<Customer>(customer, HttpStatus.OK);
+	}
+
+}
+
+
+
+package org.cap.dao;
+
+import java.util.List;
+
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+
+import org.cap.model.Customer;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+@Repository("customerDao")
+@Transactional
+public class CustomerDaoImpl implements ICustomerDao{
+	
+	@PersistenceContext
+	private EntityManager em;
+	
+	@Override
+	public List<Customer> getAllCustomers(){
+       List<Customer> customers= em.createQuery("from Customer").getResultList();
+	
+		return customers;
+		
+	}
+	
+	@Override
+	public List<Customer> deleteCustomer(Integer customerId) {
+		Customer customer=em.find(Customer.class, customerId);
+		if(customer==null)
+			return null;
+			else {
+				em.remove(customer);
+				return getAllCustomers();
+			}
+		}
+	
+	@Override
+	public Customer findCustomer(Integer customerId) {
+		Customer customer=em.find(Customer.class, customerId);
+		return customer;
+		
+	}
+	
+	@Override
+	public List<Customer> createCustomer(Customer customer) {
+		em.persist(customer);
+		return getAllCustomers();
+	} 
+	
+	@Override
+	public List<Customer> updateCustomer(Customer customer) {
+		if(customer.getCustomerId()==0) {
+			em.persist(customer);
+			return getAllCustomers();
+		}	
+	
+		else
+		{
+			em.merge(customer);
+			return getAllCustomers();
+		}
+	}
+}
