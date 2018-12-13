@@ -1,0 +1,14 @@
+
+
+1..added components myorders,returngoods,initiatereturn
+
+2..change paths in auth routing module and app routing module
+
+
+//todo
+
+1.displaying image
+
+2.for loop for products
+
+3.check orders.ts and pojo classes in backend 
